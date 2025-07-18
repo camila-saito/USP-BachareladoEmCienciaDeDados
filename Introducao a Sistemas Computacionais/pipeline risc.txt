@@ -1,0 +1,4 @@
+Por que o pipeline RISC é mais otimizado?
+
+1. Porque, como as instruções são simples, uniformes e otimizadas, as operações de carregamento e armazenamento na memória ocorre no nível dos registradores.
+2. Porque possibilita a previsibilidade do tempo de execução, já que todas as instruções levam a mesma quantidade de ciclos (1 instrução por clock)
