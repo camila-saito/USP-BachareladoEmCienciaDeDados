@@ -1,0 +1,605 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+
+\begin{center}
+\textbf{Universidade de São Paulo}
+\vspace{-5pt}
+
+\textbf{Instituto de Ciências Matemáticas e de Computação}
+\vspace{-5pt}
+
+\textbf{ SME0820 - Modelos de Regressão e Aprendizado Supervisionado I}
+\vspace{10pt}
+
+\textbf{\LARGE Tarefa Lab. 3 - Regressão Linear Múltipla}
+
+Estagiário: Riquelme N. Santos (riquelme@usp.br)  
+\vspace{-5pt}
+
+Supervisora: Prof.a Dra. Reiko Aoki (reiko@icmc.usp.br)
+\end{center}
+
+## Grupo X:
+
+-   Vinícius de Moraes - 13749910
+-   Lina Sun Young Park - 11402617
+-   Romulo Ferreira da Silva - 13734326
+-   Camila Aya Saito - 15635649
+
+------------------------------------------------------------------------
+
+## Observações Importantes:
+
+1.  **Entrega**: A atividade deve ser entregue em formato PDF ou HTML, gerado a partir deste arquivo R Markdown.
+
+2.  **Código**: Todo código R deve estar visível e executável. Comentários no código são bem-vindos.
+
+3.  **Interpretações**: As interpretações devem ser feitas no contexto do problema, considerando as unidades das variáveis.
+
+4.  **Gráficos**: Todos os gráficos devem ter títulos e rótulos apropriados nos eixos.
+
+5.  **Critérios de Avaliação**:
+
+    -   Correção técnica do código R
+    -   Adequação das interpretações
+    -   Qualidade dos gráficos
+    -   Clareza na apresentação dos resultados
+    -   Análise crítica dos resultados obtidos
+
+**Boa sorte!**
+
+------------------------------------------------------------------------
+
+## Descrição do Dataset
+
+O dataset `BGSgirls.csv` contém dados do Berkeley Guidance Study de meninas nascidas em 1928-29 em Berkeley, CA. As variáveis disponíveis são:
+
+### Variáveis aos 2 anos:
+
+-   **WT2**: Peso aos 2 anos (kg)
+-   **HT2**: Altura aos 2 anos (cm)
+
+### Variáveis aos 9 anos:
+
+-   **WT9**: Peso aos 9 anos (kg)
+-   **HT9**: Altura aos 9 anos (cm)
+-   **LG9**: Circunferência da perna aos 9 anos (cm)
+-   **ST9**: Força aos 9 anos (kg)
+
+### Variáveis aos 18 anos:
+
+-   **WT18**: Peso aos 18 anos (kg)
+-   **HT18**: Altura aos 18 anos (cm) **(VARIÁVEL RESPOSTA PRINCIPAL)**
+-   **LG18**: Circunferência da perna aos 18 anos (cm)
+-   **ST18**: Força aos 18 anos (kg)
+-   **BMI18**: Índice de Massa Corporal aos 18 anos, calculado como WT18/(HT18/100)\^2
+
+### Outras variáveis:
+
+-   **Soma**: Somatotipo, escala de 1 a 7 do tipo corporal
+
+## Exercícios
+
+### 1. Carregamento e Preparação dos Dados
+
+**a)** Carregue o dataset `BGSgirls.csv` e ajuste o modelo de regressão múltipla:
+
+$$E(HT18|X) = \beta_0 + \beta_1 HT2 + \beta_2 WT2 + \beta_3 HT9 + \beta_4 WT9 + \beta_5 ST9$$
+
+```{r echo=TRUE, results='hold'}
+# Definir diretório e ler arquivo
+setwd("C:/Users/camil/Downloads")
+data <- read.table("BGSgirls.csv", header = TRUE, sep = ";", dec = ",")
+str(head(data))
+```
+
+```{r}
+# Definir variáveis do modelo
+y <- data$HT18
+x1 <- data$HT2
+x2 <- data$WT2
+x3 <- data$HT9
+x4 <- data$WT9
+x5 <- data$ST9
+
+p = 6
+```
+
+```{r}
+# Criar dataframe
+dados <- data.frame(HT2 = x1, WT2 = x2, HT9 = x3, WT9 = x4, ST9 = x5, HT18 = y)
+head(dados)
+```
+
+```{r}
+# Ajustar modelo de regressão linear
+modelo <- lm(HT18 ~ HT2 + WT2 + HT9 + WT9 + ST9, data = dados)
+```
+
+**b)** Exiba o resumo do modelo ajustado e interprete os coeficientes.
+
+```{r echo=TRUE, results='hold'}
+cat("=== MODELO AJUSTADO ===\n")
+summary(modelo)
+```
+
+```{r}
+cat("O coeficiente de HT9 parece ser o coeficiente mais influente do modelo com um valor consideravelmente alto de 1.17452, tendo um efeito positivo. WT9 tem efeito negativo e ST9 um efeito pequeno e negativo. Já HT2 e WT2 parecem ser estatisticamente não significantes pelo seu alto Pr(>|t|).", "\n")
+```
+
+### 2. Cálculo Manual dos Resíduos
+
+**a)** Calcule manualmente a matriz hat $H = X(X^TX)^{-1}X^T$ e os valores de leverage $h_{ii}$ (elementos da diagonal de $H$).
+
+```{r echo=TRUE, results='hold'}
+# Cálculo manual da matriz Hat (para fins ilustrativos)
+n <- nrow(dados)
+X <- model.matrix(modelo)
+H <- X %*% solve(t(X) %*% X) %*% t(X)
+h_manual <- diag(H)
+```
+
+```{r}
+cat("=== PROPRIEDADES DA MATRIZ HAT ===\n")
+cat("Soma dos h_ii:", sum(h_manual), "\n")
+cat("(Deve ser igual ao número de parâmetros p =", ncol(X), ")\n\n")
+
+cat("Resumo dos valores de leverage:\n")
+print(summary(h_manual))
+```
+
+**b)** Calcule manualmente os três tipos de resíduos usando as fórmulas:
+
+-   **Resíduos padronizados**: $d_i = \frac{e_i}{\sqrt{QM_{Res}}}$
+
+-   **Resíduos studentizados internos**: $r_i = \frac{e_i}{\sqrt{QM_{Res} \cdot (1 - h_{ii})}}$
+
+-   **Resíduos studentizados externos**: $t_i = \frac{e_i}{\sqrt{S^2_{(i)} \cdot (1 - h_{ii})}}$, onde $S^2_{(i)} = \frac{(n-p) \cdot QM_{Res} - e_i^2/(1-h_{ii})}{n-p-1}$
+
+```{r echo=TRUE, results='hold'}
+### Cálculo Manual dos Resíduos
+
+# Leverage (alavancagem)
+h <- hatvalues(modelo)
+
+# Resíduos ordinários 
+e_i_manual <- y - (H %*% y)
+
+# Quadrado Médio dos Resíduos (QMRes)
+QMRes <- sum(e_i_manual^2) / (n - p)
+
+# Resíduo padronizado: d_i = e_i / sqrt(QMRes)
+d_i_manual <- e_i_manual / sqrt(QMRes)
+
+# Resíduo studentizado interno: r_i = e_i / sqrt(QMRes * (1 - h_ii))
+r_i_manual <- e_i_manual / sqrt(QMRes * (1 - h))
+
+# Resíduo studentizado externo: t_i = e_i / sqrt(S^2_(i) * (1 - h_ii))
+# onde S^2_(i) = [(n-p)*QMRes - e_i^2/(1-h_ii)] / (n-p-1)
+S_i_quadrado <- ((n - p) * QMRes - e_i_manual^2 / (1 - h)) / (n - p - 1)
+t_i_manual <- e_i_manual / sqrt(S_i_quadrado * (1 - h))
+
+# Parâmetros do modelo
+n <- nrow(dados)
+p <- length(coef(modelo))
+
+cat("=== INFORMAÇÕES DO MODELO ===\n")
+cat("Número de observações (n):", n, "\n")
+cat("Número de parâmetros (p):", p, "\n")
+cat("Quadrado Médio dos Resíduos (QMRes):", round(QMRes, 4), "\n\n")
+
+```
+
+```{r}
+# PRIMEIROS 10 RESÍDUOS 
+comparacao_residuos <- data.frame(
+  e_i_manual = e_i_manual[1:10],
+  r_i_manual = r_i_manual[1:10],
+  t_i_manual = t_i_manual[1:10]
+)
+
+print(round(comparacao_residuos, 3))
+```
+
+**c)** Compare seus resultados com as funções do R: `residuals()`, `rstandard()` e `rstudent()`.
+
+```{r echo=TRUE, results='hold'}
+e_i <- residuals(modelo)
+r_i <- rstandard(modelo)
+t_i <- rstudent(modelo)
+```
+
+```{r}
+comparacao_residuos_funcoes <- data.frame(
+  e_i = e_i[1:10],
+  r_i = r_i[1:10],
+  t_i = t_i[1:10]
+)
+
+print(round(comparacao_residuos_funcoes, 3))
+
+```
+
+**d)** Explique a diferença conceitual entre os três tipos de resíduos. Qual é mais adequado para detectar outliers e por quê?
+
+```{r echo=TRUE, results='hold'}
+cat("Os resíduos padronizados dividem o erro pelo desvio-padrão global e não consideram a alavancagem, sendo pouco sensíveis a outliers. Os resíduos studentizados internos ajustam o resíduo pela variância inflacionada pela alavancagem, tornando a comparação mais justa, mas ainda utilizam a variância calculada com o próprio ponto suspeito, o que pode mascarar extremos. Já os resíduos studentizados externos recalculam a variância removendo o ponto em análise, evitando que ele influencie a estimação do erro. Por isso, são os mais adequados para detectar outliers, pois mostram o quanto o ponto se desvia quando não tem chance de “esconder” seu próprio impacto no modelo.", "\n") 
+```
+
+### 3. Gráficos de Diagnóstico
+
+**a)** Construa o painel completo com os 4 gráficos diagnósticos automáticos usando `plot(modelo)`.
+
+```{r echo=TRUE, results='hold'}
+par(mfrow = c(2, 2))
+plot(modelo)
+```
+
+**b)** Construa manualmente um gráfico de dispersão dos resíduos studentizados externos ($t_i$) versus valores ajustados. Adicione linhas de referência em $y = 0$, $y = 2$ e $y = -2$.
+
+```{r echo=TRUE, results='hold'}
+# Valores ajustados
+ajustados <- fitted(modelo)
+
+# Gráfico dos resíduos studentizados externos
+plot(ajustados, t_i_manual,
+     main = "Resíduos Studentizados Externos vs Valores Ajustados",
+     xlab = "Valores Ajustados",
+     ylab = "Resíduos Studentizados Externos (t_i)",
+     pch = 19, col = "blue")
+
+abline(h = 0, lwd = 2)
+abline(h = 2, lty = 2, col = "red")
+abline(h = -2, lty = 2, col = "red")
+
+```
+
+**c)** Construa um gráfico Q-Q Normal dos resíduos studentizados externos ($t_i$) para verificar normalidade.
+
+```{r echo=TRUE, results='hold'}
+qqnorm(t_i_manual,
+       main = "Q-Q Plot dos Resíduos Studentizados Externos")
+qqline(t_i_manual, col = "red", lwd = 2)
+```
+
+**d)** Interprete os gráficos. O modelo satisfaz os pressupostos de:
+
+-   Linearidade O gráfico de resíduos vs. ajustados mostram um padrão aleatório, indicando linearidade.
+-   Homocedasticidade A variância dos resíduos não apresenta heterocedasticidade evidente, ou seja, a variância pode ser considerada constante.
+-   Normalidade dos resíduos No gráfico QQ-plot, os pontos estão próximos a linha, com leves desvios nas caudas. A normalidade dos resíduos é aceita, mas há indícios de existência de outliers.
+-   Independência Não há um padrão estruturado nos resídups, portanto assumimos independência.
+
+### 4. Identificação de Outliers
+
+**a)** Identifique as observações com $|t_i| > 2$. Liste os índices, estados e valores de $t_i$.
+
+```{r echo=TRUE, results='hold'}
+outliers <- which(abs(t_i_manual) > 2)
+outliers
+
+# tabela com índices e valores de t_i
+data.frame(
+  indice = outliers,
+  ti = t_i_manual[outliers]
+)
+```
+
+**b)** Para cada outlier identificado, calcule quanto seria o $R^2$ do modelo se essa observação fosse removida. Compare com o $R^2$ do modelo completo.
+
+```{r echo=TRUE, results='hold'}
+R2_original <- summary(modelo)$r.squared
+
+R2_sem_outlier <- c()
+
+for (i in outliers) {
+  modelo_sem_i <- lm(HT18 ~ HT2 + WT2 + HT9 + WT9 + ST9,
+                     data = dados[-i, ])
+  R2_sem_outlier[i] <- summary(modelo_sem_i)$r.squared
+}
+
+data.frame(
+  indice = outliers,
+  R2_sem_i = R2_sem_outlier[outliers],
+  R2_original = R2_original
+)
+
+```
+
+**c)** Discuta se algum outlier deve ser removido do modelo. Justifique sua resposta considerando aspectos estatísticos e contextuais.
+
+Em todos os casos, remover o ponto aumenta o R², mas muito pouco (entre 0.01 a 0.02). Isso indica que esses outliers não estão alavancando fortemente o ajuste. Assim, os outliers não prejudicam significativamente o modelo, portanto não precisam ser removidos.
+
+### 5. Análise de Leverage e Pontos Influentes
+
+**a)** Calcule o limite para alta alavancagem usando o critério $h_{ii} > \frac{2p}{n}$. Identifique as observações de alta alavancagem.
+
+```{r echo=TRUE, results='hold'}
+# Seu código aqu
+limite <- 2*p/n
+cat(limite)
+alta_alavancagem = which(h_manual >limite)
+plot(alta_alavancagem)
+```
+
+**b)** Construa um gráfico de leverage ($h_{ii}$) versus índice da observação. Destaque os pontos de alta alavancagem em vermelho.
+
+```{r echo=TRUE, results='hold'}
+leverage <- hatvalues(modelo)
+
+alta_leverage <- which(leverage > limite)
+cat("Número de observações com alta alavancagem:", length(alta_leverage), "\n")
+
+if(length(alta_leverage) > 0) {
+  cat("\nObservações com alta alavancagem:\n")
+  print(data.frame(
+    Indice = alta_leverage,
+    Leverage = round(leverage[alta_leverage], 4),
+    Estado = data$X[alta_leverage]
+  ))
+}
+plot(leverage,
+     main = "Leverage das Observações",
+     xlab = "Índice",
+     ylab = "Leverage (h_ii)",
+     pch = 16, col = "darkblue")
+abline(h = limite, col = "red", lwd = 2, lty = 2)
+
+# Identificar pontos com alta alavancagem
+points(alta_leverage, leverage[alta_leverage], 
+       col = "red", pch = 16)
+
+legend("topright",
+       legend = c("Observações normais", "Alta alavancagem", "Limite (2p/n)"),
+       col = c("darkblue", "red", "red"),
+       pch = c(16, 16, NA),
+       lty = c(NA, NA, 2),
+       lwd = c(NA, NA, 2))
+```
+
+**c)** Identifique as observações potencialmente influentes (combinação de alto $|t_i|$ E alta $h_{ii}$). Crie uma tabela com os índices, estados, valores de $t_i$ e $h_{ii}$.
+
+```{r echo=TRUE, results='hold'}
+# Gráfico de t_i vs leverage
+alto_t_i <- which(abs(t_i_manual) > 1)
+indice_alto_t_i <- which(leverage[alto_t_i] > limite )
+
+
+if(length(outliers) > 0) {
+
+  cat("\nObservações com alta alavancagem que tambem são outliers:\n")
+
+  print(data.frame(
+
+    Indice = indice_alto_t_i,
+    t_i = t_i_manual[indice_alto_t_i],
+
+    Leverage = round(leverage[indice_alto_t_i], 4)
+
+  ))
+
+}
+
+```
+
+**d)** Construa o gráfico de Resíduos Studentizados ($t_i$) versus Leverage ($h_{ii}$) com linhas de referência em $|t_i| = 2$ e $h_{ii} = 2p/n$. Destaque as observações problemáticas.
+
+```{r echo=TRUE, results='hold'}
+par(pch = 19, col = "darkblue", las = 1)
+plot(h, t_i_manual,
+     main = "Resíduos Studentizados (t_i) vs Leverage (h_ii)",
+     xlab = expression(h[ii]),
+     ylab = expression(t[i]),
+     ylim = c(min(t_i) - 1, max(t_i) + 1))
+
+# Linhas de referência
+abline(h = c(-2, 0, 2), col = c("orange", "gray", "orange"), lty = c(2, 1, 2), lwd = 2)
+abline(v = limite, col = "red", lty = 2, lwd = 2)
+
+influentes_potenciais <- intersect(outliers, alta_alavancagem)
+# Destacar observações problemáticas
+if(length(influentes_potenciais) > 0) {
+  points(h_ii[influentes_potenciais], t_i[influentes_potenciais],
+         col = "red", pch = 16, cex = 1.8)
+  text(h[influentes_potenciais], t_i_manual[influentes_potenciais],
+       labels = data$X[influentes_potenciais],
+       pos = 3, cex = 0.8, col = "red", font = 2)
+}
+
+legend("bottomright",
+       legend = c("Observações", "|t_i| = 2", "h_ii = 2p/n", "Influentes"),
+       col = c("darkblue", "orange", "red", "red"),
+       pch = c(19, NA, NA, 16),
+       lty = c(NA, 2, 2, NA),
+       lwd = c(NA, 2, 2, NA),
+       cex = 0.9)
+
+cat("\n=== INTERPRETAÇÃO DO GRÁFICO ===\n")
+cat("• Quadrante superior direito: PROBLEMÁTICO (alto |t_i| + alta h_ii)\n")
+cat("• Quadrante inferior direito: Alta alavancagem, mas resíduo pequeno\n")
+cat("• Quadrante superior esquerdo: Outlier, mas sem alta alavancagem\n")
+cat("• Observações fora das linhas de referência merecem investigação\n")
+```
+
+**e)** Explique a diferença entre:
+
+-   Ponto de alavanca (leverage)
+-   Outlier
+-   Ponto influente
+
+Um ponto alavanca, é um ponto de X mais extremo.
+
+Um Outlier é um ponto com alto resíduo.
+
+Um ponto influente é aquele que possui um impacto muito maior sobre o modelo em comparação aos demais geralmente no R\^2.
+
+Um ponto de alta alavancagem é necessariamente influente? Justifique.
+
+Não pois este pode ser a favor da tendencia, sendo somente um ponto mais extremo de X.
+
+```{r echo=TRUE, results='hold'}
+# Seu código aqui
+```
+
+### 6. Análise Comparativa de Modelos
+
+**a)** Ajuste um modelo de regressão simples usando apenas `WT9` como preditor:
+
+$$E(HT18|X) = \beta_0 + \beta_1 WT9$$
+
+```{r echo=TRUE, results='hold'}
+# Dados do modelo simples
+dados_simples <- data.frame(WT9 = x4, HT18 = y)
+head(dados_simples)
+```
+
+```{r echo=TRUE, results='hold'}
+# Ajuste do modelo simples
+modelo_simples <- lm(HT18 ~ WT9, data = dados_simples)
+summary(modelo_simples)
+```
+
+**b)** Compare os diagnósticos dos dois modelos (múltiplo vs simples):
+
+-   Gráficos de resíduos
+-   Identificação de outliers
+-   Pontos de alta alavancagem
+-   $R^2$ e $R^2$ ajustado
+
+```{r echo=TRUE, results='hold'}
+# Cálculo dos diagnósticos do modelo simples e comparação com os resultados do modelo múltiplo obtidos anteriormente
+
+cat("====== Gráfico de resíduos simples =======")
+
+# Gráficos do plot()
+par(mfrow = c(2, 2))
+plot(modelo_simples)
+
+cat("Nos gráficos de Resíduos vs Valores Ajustados, no modelo simples os resíduos têm maior variância (de -10 a 10) e os valores ajustados estão concentrados entre 164 e 168, enquanto no modelo múltiplo, os resíduos variam de -5 a 5 e os valores ajustados estão concentrados entre 165 e 170.\n\n")
+
+cat("Nos gráficos do Q-Q Normal, em ambos os modelos a normalidade dos resíduos é aceita, uma vez que os pontos de ambos estão próximos da linha. Entretanto, o desvio nas caudas do modelo simples é maior do que no modelo múltiplo, o que pode indicar maior presença de outliers no modelo simples.\n\n")
+
+cat("Nos gráficos de scale-location, assim como no modelo múltiplo, a variância também não apresenta heterocedasticidade evidente no modelo simples, sendo a constância da variância ainda mais evidente.\n\n")
+
+cat("Por fim, nos gráficos de Resíduos vs Leverage, há uma maior concentração dos pontos perto de Leverage = 0.02 no modelo simples, enquanto que, no modelo múltiplo os pontos estão mais bem distribuídos.")
+```
+
+```{r echo=TRUE, results='hold'}
+cat("======= Outliers =======")
+
+outliers_simples <- which(abs(rstudent(modelo_simples)) > 2)
+
+R2_original_simples <- summary(modelo_simples)$r.squared
+R2_sem_outlier_simples <- c()
+
+for (i in outliers_simples) {
+  modelo_sem_i_simples <- lm(HT18 ~ WT9,
+                     data = dados_simples[-i, ])
+  R2_sem_outlier_simples[i] <- summary(modelo_sem_i_simples)$r.squared
+}
+
+data.frame(
+  indice = outliers_simples,
+  ti = rstudent(modelo_simples)[outliers_simples],
+  R2_sem_i = R2_sem_outlier_simples[outliers_simples],
+  R2_original = R2_original_simples
+)
+
+cat("Enquanto que, no modelo múltiplo, a remoção aumenta pouco os valores de R², no modelo simples, a apenas a remoção de 3 pontos (36, 57 e 63) aumenta o R² um pouco (entre 0.02 e 0.04), e em um ponto (10) o R² diminui (0.05). Como as variações ainda continuam pequenas, há indícios de que os outliers não prejudicam muito o modelo, entretanto, eles são mais influentes no modelo simples do que no múltiplo.")
+```
+
+```{r echo=TRUE, results='hold'}
+cat("======= Pontos de alta alavancagem =======\n")
+n_s <- nrow(dados_simples)
+p_s <- length(coef(modelo_simples))
+
+limite_s <- 2*p_s/n_s
+cat("Limite: ", limite, "\n")
+alavancagem_simples <- hatvalues(modelo_simples)
+alta_alavancagem_simples = which(alavancagem_simples > limite_s)
+
+cat("Número de observações com alta alavancagem:", length(alta_alavancagem_simples), "\n")
+
+if(length(alta_alavancagem_simples) > 0) {
+  print(data.frame(
+    Indice = alta_alavancagem_simples,
+    Leverage = round(alavancagem_simples[alta_alavancagem_simples], 4),
+    Estado = data$X[alta_alavancagem_simples]
+  ))
+}
+plot(alavancagem_simples,
+     main = "Leverage das Observações",
+     xlab = "Índice",
+     ylab = "Leverage (h_ii)",
+     pch = 16, col = "darkblue")
+abline(h = limite, col = "red", lwd = 2, lty = 2)
+
+points(alta_alavancagem_simples, alavancagem_simples[alta_alavancagem_simples], 
+       col = "red", pch = 16)
+
+
+cat("No modelo simples, os 4 valores de leverage são menores do que os 5 valores do modelo múltiplo. Isso significa que no modelo simples, as observações estão mais próximas do centro dos dados no espaço do que no modelo múltiplo.")
+```
+
+```{r echo=TRUE, results='hold'}
+cat("======= R² e R²ajustado =======")
+
+cat("\nModelo simples:\n")
+cat("R²:", summary(modelo_simples)$r.squared, "\n")
+cat("R²ajustado:", summary(modelo_simples)$adj.r.squared, "\n")
+
+cat("\nModelo múltiplo:\n")
+cat("R²:", summary(modelo)$r.squared, "\n")
+cat("R²ajustado:", summary(modelo)$adj.r.squared, "\n")
+```
+
+**c)** Qual modelo você recomenda? Justifique considerando:
+
+-   Qualidade do ajuste
+-   Satisfação dos pressupostos
+-   Complexidade do modelo (princípio da parcimônia)
+-   Interpretabilidade
+
+```{r echo=TRUE, results='hold'}
+# Seu código aqui
+```
+
+### 7. Questões Conceituais
+
+**a)** Por que o resíduo studentizado externo ($t_i$) é mais robusto para detectar outliers do que o resíduo ordinário ($e_i$) ou o padronizado ($d_i$)?
+
+```{r echo=TRUE, results='hold'}
+# Seu código aqui
+```
+
+**b)** Explique por que a soma dos valores de leverage é sempre igual ao número de parâmetros: $\sum_{i=1}^{n} h_{ii} = p$.
+
+```{r echo=TRUE, results='hold'}
+# Seu código aqui
+```
+
+**c)** Um modelo pode ter bom $R^2$ mas ainda assim violar os pressupostos de regressão? Dê um exemplo e explique por que isso é problemático.
+
+```{r echo=TRUE, results='hold'}
+# Seu código aqui
+```
+
+**d)** Quando devemos remover uma observação do dataset? Quais critérios devem ser considerados além das medidas estatísticas?
+
+```{r echo=TRUE, results='hold'}
+# Seu código aqui
+```
+
+**e)** Explique a relação entre heterocedasticidade e:
+
+-   Eficiência dos estimadores
+-   Validade dos testes de hipótese
+-   Intervalos de confiança
+
+O que pode ser feito se heterocedasticidade for detectada?
+
+```{r echo=TRUE, results='hold'}
+# Seu código aqui
+```

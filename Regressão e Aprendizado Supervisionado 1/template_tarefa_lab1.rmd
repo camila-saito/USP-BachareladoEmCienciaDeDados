@@ -1,0 +1,653 @@
+---
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+\begin{center}
+\textbf{Universidade de São Paulo}
+\vspace{-5pt}
+
+\textbf{Instituto de Ciências Matemáticas e de Computação}
+\vspace{-5pt}
+
+\textbf{ SME0820 - Modelos de Regressão e Aprendizado Supervisionado I}
+\vspace{10pt}
+
+\textbf{\LARGE Trabalho Lab. 1}
+
+Estagiário: Riquelme N. Santos (riquelme@usp.br)  
+\vspace{-5pt}
+
+Supervisora: Prof.a Dra. Reiko Aoki (reiko@icmc.usp.br)
+\end{center}
+
+## Grupo X:
+
+-   Camila Aya Saito - 15635649
+-   Guilherme Vaz de Oliveira Taratá - 10817476
+-   Julio Cesar Alves Araujo Fuganti - 15638792
+-   Lina Sun Young Park - 11402617
+-   Luis Felipe Vogel Lopes - 13730051
+-   Pedro Henrique Goncalez Moracci - 8556418
+-   Romulo Ferreira da Silva - 13734326
+-   Vinicius de Moraes - 13749910
+-   Vinicius Moraes de Carvalho - 15642432
+
+------------------------------------------------------------------------
+
+## Observações Importantes:
+
+1.  **Entrega**: A atividade deve ser entregue em formato PDF ou HTML, gerado a partir deste arquivo R Markdown.
+
+2.  **Código**: Todo código R deve estar visível e executável. Comentários no código são bem-vindos.
+
+3.  **Interpretações**: As interpretações devem ser feitas no contexto do problema, considerando as unidades das variáveis.
+
+4.  **Gráficos**: Todos os gráficos devem ter títulos e rótulos apropriados nos eixos.
+
+5.  **Critérios de Avaliação**:
+
+    -   Correção técnica do código R
+    -   Adequação das interpretações
+    -   Qualidade dos gráficos
+    -   Clareza na apresentação dos resultados
+    -   Análise crítica dos resultados obtidos
+
+**Boa sorte!**
+
+------------------------------------------------------------------------
+
+## Descrição do Dataset
+
+O dataset `fuel2001.csv` contém dados sobre consumo de combustível e características demográficas dos estados americanos em 2001. As principais variáveis são:
+
+-   **FuelC**: Consumo total de combustível (variável resposta)
+-   **Drivers**: Número de motoristas habilitados (variável explicativa principal)
+-   **Income**: Renda média, **Miles**: Milhas percorridas, **Pop**: População, **Tax**: Taxa de imposto
+
+## Exercícios
+
+### 1. Carregamento e Exploração dos Dados
+
+**a)** Carregue o dataset `fuel2001.csv` e examine sua estrutura usando `str()` e `head()`.
+
+```{r echo=TRUE, results='hold'}
+# Limpar ambiente
+rm(list=ls(all=TRUE))
+
+# Definir diretório e ler arquivo
+setwd("C:/Users/user/Downloads")
+data <- read.table("fuel2001.csv", header = TRUE, sep = ",", dec = ".")
+
+# Visualização inicial dos dados
+head(data)
+str(data)
+```
+
+No dataset fuel2001.csv temos alguns dados relacionados ao consumo de combustível em estados americanos. Ele apresenta 5 variáveis inteiras (Drivers, FuelC, Income, Miles e Pop) e 2 variáveis decimais (MPC e Tax) para cada estado/índice(X). Nesse trabalho serão utilizadas as variáveis Drivers e FuelC.
+
+**b)** Calcule as medidas descritivas (média, mediana, desvio padrão, mínimo, máximo) para as variáveis `FuelC` e `Drivers` usando tanto funções manuais quanto funções do R.
+
+```{r echo=TRUE, results='hold'}
+y <- data$FuelC # variável resposta
+x1 <- data$Drivers #variável explicativa
+
+# Utilizando função do R
+cat("\n=== ESTATÍSTICAS A PARTIR DE FUNÇÕES DO R ===\n")
+cat("Média de 'FuelC' (Y):", mean(y), "\n")
+cat("Média de 'Drivers' (X1):", mean(x1), "\n")
+cat("Mediana de 'FuelC' (Y):", median(y), "\n")
+cat("Mediana de 'Drivers' (X1):", median(x1), "\n")
+cat("Desvio padrão de 'FuelC' (Y):", sd(y), "\n")
+cat("Desvio padrão de 'Drivers' (X1):", sd(x1), "\n")
+cat("Mínimo de 'FuelC' (Y):", data$FuelC[which.min(y)], "\n")
+cat("Mínimo de 'Drivers' (X1):", data$Drivers[which.min(x1)], "\n")
+cat("Máximo de 'FuelC' (Y):", data$FuelC[which.max(y)], "\n")
+cat("Máximo de 'Drivers' (X1):", data$Drivers[which.max(x1)], "\n")
+
+# Cálculo manual das estatísticas
+n <- dim(data)[1]
+soma_y <- sum(y)
+soma_x1 <- sum(x1)
+
+y_barra <- soma_y/n 
+x_barra <- soma_x1/n
+var_y <- (sum(y^2) - n*(mean(y))^2)/(n-1)
+
+dp_y <- sqrt(var_y)
+var_x1 <- (sum(x1^2) - n*(mean(x1))^2)/(n-1)
+dp_x1 <- sqrt(var_x1)
+
+cat("\n=== ESTATÍSTICAS CALCULADAS MANUALMENTE ===\n")
+cat("Média de 'FuelC' (Y):", y_barra, "\n")
+cat("Média de 'Drivers' (X1):", x_barra, "\n")
+cat("Desvio padrão de 'FuelC' (Y):", dp_y, "\n")
+cat("Desvio padrão de 'Drivers' (X1):", dp_x1, "\n")
+```
+
+**c)** Construa um gráfico de dispersão entre `FuelC` (eixo y) e `Drivers` (eixo x) com título e rótulos apropriados.
+
+```{r echo=TRUE, results='hold'}
+plot(x1, y, 
+     main = "Gráfico de dispersão \n Combustível vs Motoristas habilitados", 
+     xlab = "Número de motoristas habilitados", 
+     ylab = "Consumo total de combustível",
+     pch = 16,
+     col = "red")
+```
+
+**d)** Construa histogramas para as variáveis `FuelC` e `Drivers` e descreva a distribuição de cada uma.
+
+```{r echo=TRUE, results='hold'}
+# Histograma para 'FuelC'
+hist(y, 
+     main = "Histograma do Consumo total de Combustível", 
+     ylab = "Frequência", 
+     xlab = "Consumo",
+     col = "lightblue",
+     border = "black",
+     breaks = 8)
+
+# Histograma para 'Drivers'
+hist(x1, 
+     main = "Histograma do Número de Motoristas Habilitados", 
+     ylab = "Frequência", 
+     xlab = "Número de motoristas habilitados",
+     col = "purple",
+     border = "black",
+     breaks = 8)
+```
+
+Tanto a variável `FuelC` quanto `Drivers` tem distribuições semelhantes, com uma linha decrescente de frequência e observações concentradas em números mais baixos, entre 0 e 5e+06. Ambos os gráficos são assimétricos à esquerda e há a presença de alguns dados mais extremos.
+
+**e)** Interprete os resultados. Quais suas percepções sobre os dados?
+
+Através da comparação dos histogramas, é possível notar que, da mesma forma que o número de estados com uma quantidade relativamente baixa de motoristas habilitados é maior, o número de estados com baixo consumo total de combustível também é alto, o que dá indícios de que as duas variáveis podem estar relacionadas. Isso é reforçadop elo gráfico de dispersão, onde é possível observar uma tendência de relação linear entre as variáveis 'FuelC' e 'Drivers'
+
+### 2. Cálculos Manuais das Somas de Quadrados
+
+Calcule manualmente (sem usar `lm()`):
+
+**a)** As somas $S_{xx}$, $S_{yy}$ e $S_{xy}$ usando as fórmulas:
+
+$$S_{xx} = \sum_{i=1}^{n}(x_i - \bar{x})^2 = \sum x_i^2 - n\bar{x}^2$$
+
+$$S_{yy} = \sum_{i=1}^{n}(y_i - \bar{y})^2 = \sum y_i^2 - n\bar{y}^2$$
+
+$$S_{xy} = \sum_{i=1}^{n}(x_i - \bar{x})(y_i - \bar{y}) = \sum x_i y_i - n\bar{x}\bar{y}$$
+
+```{r echo=TRUE, results='hold'}
+# Cálculo de Sxx
+Sxx <- sum((x1 - x_barra)^2)
+# alternativa >> Sxx <- sum(x1^2) - n*x_barra^2
+cat("Sxx =", Sxx, "\n")
+
+# Cálculo de Syy
+Syy <- sum((y - y_barra)^2)
+# alternativa >> Syy <- sum(y^2) - n*y_barra^2
+cat("Syy =", Syy, "\n")
+
+# Cálculo de Sxy
+Sxy <- sum((x1 - x_barra)*(y - y_barra))
+# alternativa >> Sxy <- sum((x1 - x_barra)*y)
+cat("Sxy =", Sxy, "\n")
+```
+
+**b)** Os coeficientes $\hat{\beta_0}$ e $\hat{\beta_1}$ usando as fórmulas dos mínimos quadrados:
+
+$$\hat{\beta_1} = \frac{S_{xy}}{S_{xx}} \quad \text{e} \quad \hat{\beta_0} = \bar{y} - \hat{\beta_1}\bar{x}$$
+
+```{r echo=TRUE, results='hold'}
+# Cálculo do estimador de b1
+b1_est <- Sxy/Sxx
+cat("b1 estimado = ", round(b1_est, 3), "\n")
+
+# Cálculo do estimador de b0
+b0_est <- y_barra - b1_est*x_barra
+cat("b0 estimado = ", round(b0_est, 3), "\n")
+
+```
+
+**c)** Interprete o coeficiente $\hat{\beta_1}$ no contexto do problema. Para $\hat{\beta_0}$, discuta se sua interpretação literal faz sentido no contexto (considere os perigos da extrapolação).
+
+No contexto do problema, $\hat{\beta_1}$ representa a taxa de crescimento, ou seja, o quanto o consumo de combustível aumenta para cada motorista habilitado a mais em um estado. Já com relação a $\hat{\beta_0}$, no contexto ele não faz muito sentido, uma vez que, quando não há nenhum motorista hailitado em um estado, não é esperado que um automóvel se locomova, e consequentemente, não haverá consumo de combustível. Portanto, quando x=0, o valor de y seria 0.
+
+### 3. Análise de Resíduos e Somas de Quadrados
+
+**a)** Calcule os valores preditos e os resíduos do modelo.
+
+```{r echo=TRUE, results='hold'}
+# Valores preditos
+y_pred <- b0_est + b1_est*x1
+
+# Resíduos
+res <- y - y_pred
+
+cat("Primeiros 10 valores preditos:\n")
+print(head(y_pred, 10))
+
+cat("Primeiros 10 resíduos:\n")
+print(head(res, 10))
+```
+
+**b)** Calcule as somas de quadrados: $SQ_{Total}$, $SQ_{Regressão}$ e $SQ_{Resíduos}$.
+
+```{r echo=TRUE, results='hold'}
+# SQ da Regressão
+SQreg <- b1_est * Sxy
+
+# SQ Total
+SQtotal <- sum((y - mean(y))^2)
+
+# SQ dos Resíduos
+SQres <- SQtotal - SQreg
+
+cat("SQ Regressão:", SQreg, "\n")
+cat("SQ Total:", SQtotal, "\n")
+cat("SQ Resíduos:", SQres, "\n")
+```
+
+**c)** Verifique que $SQ_{Total} = SQ_{Regressão} + SQ_{Resíduos}$.
+
+```{r echo=TRUE, results='hold'}
+SQtotal_alt <- SQreg + SQres
+
+cat("SQtotal =", SQtotal)
+cat("\nSQreg + SQres =", SQtotal_alt)
+
+if(SQtotal == SQtotal_alt){
+  cat("\n\nA afirmação está correta.")
+}else{
+  cat("\n\nA afirmação está incorreta.")  
+}
+```
+
+### 4. Coeficiente de Determinação
+
+**a)** Calcule o $R^2$ usando a fórmula $R^2 = \frac{SQ_{Regressão}}{SQ_{Total}}$.
+
+```{r echo=TRUE, results='hold'}
+R2 <- SQreg/SQtotal
+cat("R^2 =", R2)
+
+```
+
+**b)** Calcule também a correlação de Pearson e compare com o $R^2$.
+
+R² é equivalente ao quadrado do Coeficiente de Correlação de Pearson $$ R^2 = \frac{SQ_{\text{Reg}}}{SQ_{\text{Tot}}}
+= \frac{\left(\sum (X_i - \bar{X})(Y_i - \bar{Y})\right)^2}{\sum (X_i - \bar{X})^2 \;\;}*\frac{1}{\sum (Y_i - \bar{Y})^2}
+= \left(\frac{\sum (X_i - \bar{X})(Y_i - \bar{Y})}{\sqrt{\sum (X_i - \bar{X})^2 \;\; \sum (Y_i - \bar{Y})^2}}\right)^2 = r_{XY}^2
+ $$
+
+```{r echo=TRUE, results='hold'}
+rxy = cor(x1, y, method = "pearson")
+cat("(Correlação de Pearson)^2 =", rxy^2)
+cat("\n\nR² =", R2)
+
+if(rxy^2 == R2){
+  cat("\n\n(Correlação de Pearson)^2 = R² =", R2)
+}else{
+  cat("\n\nA (Correlação de Pearson)^2 difere de R²")  
+}
+```
+
+**c)** Interprete os resultados
+
+O R² é a proporção da variância de y explicada pelas variáveis preditoras do modelo. Ou seja, é uma medida que avalia o quanto o modelo de regressão linear consegue explicar da variabilidade dos dados.
+
+Em nosso modelo (Número de motoristas habilitados X Consumo total de combustível) a variável preditora explica por volta de 97.03% da variabilidade de Consumo total de combustível. O que indica um alto ajuste do modelo aos dados.
+
+### 5. Testes de Hipóteses
+
+**a)** Calcule o Quadrado Médio dos Resíduos ($QM_{Res}$) e teste a hipótese $H_0: \beta_1 = 0$ vs $H_1: \beta_1 \neq 0$ usando a estatística $t$.
+
+-   O Quadrado Médio dos resíduos é dado por:
+
+$$QM_{res} =\sum^n_{i=1} \frac{y_i - \hat{y_i}}{n-2} = \frac{SQres}{n-2} $$
+
+```{r echo=TRUE, results='hold'}
+# Cálculo do Quadrado Médio do Resíduo
+QMres <- SQres / (n-2)
+cat("QM resíduos:", QMres)
+```
+
+Temos o $QM_{res}$ como estimador não viciado para $\sigma^2$.
+
+Para testarmos a hipótese $H_0: \beta_1 = 0$ vs $H_1: \beta_1 \neq 0$,\
+Temos a estatística $t_0 = \dfrac{\hat{\beta_1}}{\widehat{dp(\hat{\beta_1})}}$, em que $\widehat{dp(\hat{\beta_1})} = \sqrt{\frac{QM_{res}}{S_{xx}}}$
+
+```{r echo=TRUE, results='hold'}
+dp_b1 <- sqrt(QMres/Sxx)
+t0_b1 <- b1_est/dp_b1
+
+# Valores críticos (alpha = 5%)
+alpha <- 0.05
+t1 <- qt(alpha/2, n-2)
+t2 <- qt(1-alpha/2, n-2)
+
+cat("Teste para beta_1:\n")
+cat("Estatística t calculada:", t0_b1, "\n")
+cat("Valores críticos: t1 =", t1, ", t2 =", t2, "\n")
+
+if(t0_b1 < t1 || t0_b1 > t2){
+  cat("Decisão: Rejeita-se H0, portanto beta_1 é significativo\n")
+} else {
+  cat("Decisão: Não se rejeita H0, portanto beta_1 não é significativo\n")
+}
+```
+
+**b)** Teste também a hipótese para $\beta_0$: $H_0: \beta_0 = 0$ vs $H_1: \beta_0 \neq 0$.\
+Neste caso,\
+Temos a estatística $t_0 = \dfrac{\hat{\beta_0}}{\widehat{dp(\hat{\beta_0})}}$, em que $\widehat{dp(\hat{\beta_0})} = \sqrt{QM_{res}(\frac{1}{n} + \frac{\bar{x}^2}{S_{xx}})}$
+
+```{r echo=TRUE, results='hold'}
+dp_b0 <- sqrt(QMres * ((1/n) + (mean(x1))^2/Sxx))
+t0_b0 <- b0_est/dp_b0
+# Valores críticos (alpha = 5%)
+
+cat("Teste para beta_0:\n")
+cat("Estatística t calculada:", t0_b0, "\n")
+cat("Valores críticos: t1 =", t1, ", t2 =", t2, "\n")
+
+if(t0_b0 < t1 || t0_b0 > t2){
+  cat("Decisão: Rejeita-se H0, portanto beta_0 é significativo\n")
+} else {
+  cat("Decisão: Não se rejeita H0, portanto beta_0 não é significativo\n")
+}
+```
+
+**c)** Interprete os resultados
+
+Como resultado, observamos que $\beta_1$ é estatisticamente significativo, enquanto $\beta_0$ não apresenta significância. Isso sugere que pode ser adequado considerar um modelo sem intercepto. Para avaliar a qualidade do ajuste, podemos utilizar o Quadrado Médio dos Resíduos como métrica de comparação entre o modelo com intercepto e o modelo sem intercepto.
+
+-   Modelo sem intercepto:\
+    Neste caso,\
+    Estatística t: $t_0 = \dfrac{\hat{\beta}_1}{\sqrt{\frac{QME_{res}}{\sum^n _{i=1}x_i^2}}}$
+
+```{r echo=TRUE, results='hold'}
+# Modelo sem intercepto
+x1y <- sum(as.numeric(x1) * as.numeric(y))
+b1_MSI <- x1y / sum(x1^2)
+cat("Estimativa de beta_1 calculado:", b1_MSI)
+```
+
+O modelo ajustado sem intercepto: $\hat{Y} = 0.6715492 X$
+
+Para testarmos a significância de $\beta_1$ no modelo sem intercepto, temos a estatística $$t = \dfrac{\hat{\beta}_1}{\widehat{dp(\hat{\beta_1})}}$$ em que $\widehat{dp(\hat{\beta_1})} = \sqrt{\frac{QM_{res}}{\sum^n_{i=1}x_i^2}}$
+
+calcula-se o $QM_{res}$ - estimador não viesado para $\sigma^2$ que é dado por $$QM_{res} = \frac{SQ_{res}}{n-1} = \frac{SQ_{Total}-SQ_{Reg}}{n-1}$$.
+
+```{r echo=TRUE, results='hold'}
+SQtotal_MSI <- sum(y^2)
+SQreg_MSI <- (b1_MSI * x1y)
+SQres <- SQtotal_MSI - SQreg_MSI
+
+QMres_MSI <- (SQtotal_MSI - SQreg_MSI) / (n-1)
+
+dp_b1_MSI <- sqrt(QMres_MSI / sum(x1^2))
+t0_b1_MSI <- b1_MSI / dp_b1_MSI
+
+t1_MSI <- qt(alpha/2, n-1)
+t2_MSI <- qt(1-alpha/2, n-1)
+
+cat("Teste para beta_1 no modelo sem intercepto:\n")
+cat("Estatística t calculada:", t0_b1_MSI, "\n")
+cat("Valores críticos: t1 =", t1_MSI, ", t2 =", t2_MSI, "\n")
+
+if (t0_b1_MSI < t1_MSI || t0_b1_MSI > t2_MSI) {
+  cat("Decisão: Rejeita-se H0, portanto beta_1 é significativo\n")
+} else {
+  cat("Decisão: Não se rejeita H0, portanto beta_1 não é significativo\n")
+}
+```
+
+Portanto o Modelo Sem Intercepto é significativo.
+
+Entretanto, ao comparar o $QM_{res}$ dos modelos,
+
+```{r echo=TRUE, results='hold'}
+cat("QMres do modelo com intercepto: ", QMres,"\n")
+cat("QMres do modelo sem intercepto: ", QMres_MSI,"\n")
+
+if(QMres_MSI < QMres){
+  cat("QMres do Modelo sem intercepto é menor que o QMres do modelo com intercepto, portanto o Modelo sem intercepto é o mais adequado.\n")
+} else {
+  cat("QMres do Modelo com intercepto é menor que o QMres do modelo com intercepto, portanto o Modelo com intercepto é o mais adequado.\n")
+}
+```
+
+### 6. Intervalos de Confiança e Predição
+
+**a)** Calcule os intervalos de confiança de 95% para $\beta_0$ e $\beta_1$ usando as fórmulas:
+
+$$IC(\beta_1) = \hat{\beta_1} \pm t_{\alpha/2,(n-2)} \times \sqrt{\frac{QM_{Res}}{S_{xx}}}$$
+
+$$IC(\beta_0) = \hat{\beta_0} \pm t_{\alpha/2,(n-2)} \times \sqrt{QM_{Res}\left(\frac{1}{n} + \frac{\bar{x}^2}{S_{xx}}\right)}$$
+
+```{r echo=TRUE, results='hold'}
+ICb1_menor <- b1_est - qt(1 - alpha/2, n - 2) * sqrt( QMres / Sxx )
+ICb1_maior <- b1_est + qt(1 - alpha/2, n - 2) * sqrt( QMres / Sxx )
+
+sprintf("IC para B1: [%.3f, %.3f]", ICb1_menor, ICb1_maior)
+
+ICb0_menor <- b0_est - qt(1 - alpha/2, n - 2) * sqrt(QMres * (1/n + x_barra^2 / Sxx) )
+ICb0_maior <- b0_est + qt(1 - alpha/2, n - 2) * sqrt(QMres * (1/n + x_barra^2 / Sxx) )
+
+sprintf("IC para B0: [%.3f, %.3f]", ICb0_menor, ICb0_maior)
+```
+
+**b)** Calcule um intervalo de confiança de 95% para o valor médio de `FuelC` quando `Drivers = 5000000`.
+
+$$IC(E[Y|X_0]) = \hat{Y_0} \pm t_{\alpha/2,(n-2)} \times \sqrt{QM_{Res}\left(\frac{1}{n} + \frac{(X_0-\bar{x})^2}{S_{xx}}\right)}$$
+
+```{r echo=TRUE, results='hold'}
+x0 <- 5000000
+y0 <- b0_est + b1_est * x0
+ICx0_menor <- y0 - qt(1 - alpha/2, n - 2) * sqrt(QMres * (1/n + (x0 - x_barra)^2 / Sxx) )
+ICx0_maior <- y0 + qt(1 - alpha/2, n - 2) * sqrt(QMres * (1/n + (x0 - x_barra)^2 / Sxx) )
+
+sprintf("Intervalo de confiança para Drivers = 5000000 (Y0 = %.3f): [%.3f, %.3f]", y0, ICx0_menor, ICx0_maior)
+```
+
+**c)** Calcule um intervalo de predição de 95% para um valor individual de `FuelC` quando `Drivers = 5000000`.
+
+$$IP(Y_0) = \hat{Y_0} \pm t_{\alpha/2,(n-2)} \times \sqrt{QM_{Res}\left(1 + \frac{1}{n} + \frac{(X_0-\bar{x})^2}{S_{xx}}\right)}$$
+
+```{r echo=TRUE, results='hold'}
+IPx0_menor <- y0 - qt(1 - alpha/2, n - 2) * sqrt(QMres * (1 + 1/n + (x0 - x_barra)^2 / Sxx) )
+IPx0_maior <- y0 + qt(1 - alpha/2, n - 2) * sqrt(QMres * (1 + 1/n + (x0 - x_barra)^2 / Sxx) )
+
+sprintf("Para o valor de Drivers = 5000000, o intervalo de predição é [%.3f, %.3f]", 
+        IPx0_menor, IPx0_maior)
+```
+
+**d)** Compare com funções prontas do R
+
+```{r echo=TRUE, results='hold'}
+print("===== USANDO FUNÇÕES PRONTAS DO R =====")
+modelo <- lm(y ~ x1)
+print("IC para B0 e B1 por funções prontas do R:")
+confint(modelo, level = (1 - alpha) )
+
+
+# IC com função do R
+ci <- predict(modelo, newdata = data.frame(x1 = 5000000), interval = "confidence")
+
+y0_barra <- ci[1, "fit"]
+y0_barra_inf <- ci[1, "lwr"]
+y0_barra_sup <- ci[1, "upr"]
+
+cat("\nValor médio de Y predito:", y0_barra, "\n")
+cat("IC 95%: [", y0_barra_inf, ",", y0_barra_sup, "]\n")
+
+
+# IP com função do R
+pi <- predict(modelo, newdata = data.frame(x1 = 5000000), interval = "prediction")
+
+y0_x1 <- pi[1, "fit"]
+y0_x1_inf <- pi[1, "lwr"]
+y0_x1_sup <- pi[1, "upr"]
+
+cat("\nValor médio de Y predito:", y0_x1, "\n")
+cat("IC 95%: [", y0_x1_inf, ",", y0_x1_sup, "]\n")
+```
+
+**e)** Compare os intervalos do item (b) e (c) e explique por que o intervalo de predição é mais amplo.
+
+Numericamente falando, a diferença dos resultados se deve à presença do número "1" dentro da raiz na fórmula para encontrar o intervalo de predição.
+
+$$IC(E[Y|X_0]) = \hat{Y_0} \pm t_{\alpha/2,(n-2)} \times \sqrt{QM_{Res}\left(\frac{1}{n} + \frac{(X_0-\bar{x})^2}{S_{xx}}\right)}$$
+
+VS
+
+$$IP(Y_0) = \hat{Y_0} \pm t_{\alpha/2,(n-2)} \times \sqrt{QM_{Res}\left(1 + \frac{1}{n} + \frac{(X_0-\bar{x})^2}{S_{xx}}\right)}$$
+
+**f)** Explique a diferença conceitual entre o intervalo de confiança para o valor médio e o intervalo de predição para um valor individual.
+
+Conceitualmente, a razão da diferença entre o intervalo de confiança para o valor médio (IC) e o intervalo de predição para um valor específico (IP) se deve ao fato de o IC capturar a incerteza dos coeficientes da reta, e o IP capturar não só a incerteza dos coeficientes, mas também a variabilidade dos erros/resíduos.
+
+### 7. ANOVA
+
+**a)** Monte a tabela ANOVA completa com GL, SQ, QM e teste F usando as fórmulas:
+
+-   $GL_{Regressão} = 1$, $GL_{Resíduos} = n-2$, $GL_{Total} = n-1$
+-   $QM_{Regressão} = \frac{SQ_{Regressão}}{1}$, $QM_{Resíduos} = \frac{SQ_{Resíduos}}{n-2}$
+-   $F_0 = \frac{QM_{Regressão}}{QM_{Resíduos}}$
+
+```{r echo=TRUE, results='hold'}
+# Graus de liberdade
+gl_reg <- 1
+gl_res <- n - 2
+gl_tot <- n - 1
+
+# Estatística F
+QMreg = SQreg
+F0 <- QMreg / QMres
+
+# Construir tabela ANOVA
+anova_table <- data.frame(
+  Fonte = c("Regressão", "Resíduos", "Total"),
+  GL = c(gl_reg, gl_res, gl_tot),
+  SQ = c(SQreg, SQres, SQtotal),   
+  QM = c(QMreg, QMres, NA),
+  F = c(F0, NA, NA)
+)
+
+# Impressão formatada
+print("Tabela ANOVA:")
+print(anova_table)
+cat("\nEstatística F (F0) = QMreg / QMres =", F0, "\n")
+```
+
+**b)** Verifique que $F_0 = t_0^2$ (onde $t_0$ é a estatística t para $\beta_1$).
+
+```{r echo=TRUE, results='hold'}
+# Verificação da relação F0 = t0^2
+t0_calc <- b1_est / sqrt(QMres / Sxx)
+cat("Estatística t para beta1 (t0) =", t0_calc, "\n")
+cat("t0^2 =", t0_calc^2, "\n")
+
+if (abs(F0 - t0_calc^2) < 1e-8) {
+  cat("Verificação: F0 é numericamente igual a t0^2.\n")
+} else {
+  cat("Verificação: F0 DIFERE de t0^2.\n")
+}
+```
+
+### 8. Questões Conceituais
+
+**a)** Quais as suposições do modelo de regressão linear simples? O modelo ajustado satisfaz essas suposições?
+
+```{r echo=TRUE, results='hold'}
+# As suposições são:
+# 1)Linearidade: A relação entre a variável resposta (y) e a variável explicativa (x) é linear.O valor esperado de y para um dado x é uma função linear de x.
+# 2)Independência dos Erros: Os erros são independentes uns dos outros.A ocorrência de um erro não influencia os outros.
+# 3)Homocedasticidade (variância Constante):Os erros têm variância constante para todos os níveis da variável explicativa X.
+# 4)Normalidade dos Erros: Os erros seguem uma distribuição normal com média zero e variância constante
+
+
+# Para verificar se o modelo ajustado satisfaz essas suposições, podemos realizar uma análise gráfica dos resíduos:
+
+
+
+#connfigurar layout para 4 gráficos
+par(mfrow=c(2,2))
+
+# 1-gráfico de Residuos x Valores Ajustados(para verificar a lineinearidade e Homocedasticidade)
+plot(y_pred, res, main = "Resíduos vs. Valores Preditos",xlab = "Valores Preditos",ylab = "Resíduos",pch = 16,col = "blue")
+abline(h = 0, col = "red", lty = 2)
+
+#2-grafico Q-Q dos reesíduos (para verificar a  normalidade)
+qqnorm(res, main ="Gráfico Q-Q dos Resíduos", pch = 16, col = "blue")
+qqline(res, col ="red", lty = 2)
+
+#3-grafico  de Escala-Localização(para verificar a Homocedasticidade)
+plot(y_pred, sqrt(abs(scale(res))),main ="Escala-Localização",xlab ="Valores Preditos",ylab = "Raiz Quadrada(|Resíduos Padronizados|)", pch = 16, col = "blue")
+
+#4)grafico de Resíduos vs. Alavancagem
+
+#primeiro extraímos as medidas necessárias do modelo
+res_padronizados <- rstandard(modelo)
+alavancagem <- hatvalues(modelo)
+dist_cook <- cooks.distance(modelo)
+
+#gráfico
+plot(alavancagem, res_padronizados, main = "Resíduos vs. Alavancagem",xlab = "Alavancagem",ylab = "Resíduos Padronizados",pch = 16,col = "blue")
+abline(h = 0, v = 0, lty = 2, col = "red")
+
+
+# legendando os pontos com alta alavancagem ou alta distância de Cook
+pontos_influentes <- which(alavancagem > 3 * mean(alavancagem) | dist_cook > 0.5)
+text(alavancagem[pontos_influentes], res_padronizados[pontos_influentes], labels = pontos_influentes,pos = 4, cex = 0.8,col = "darkred")
+
+#resetar layout
+par(mfrow=c(1,1))
+
+
+# ANALISE:
+
+#1)Resíduos X Valores Preditos:Os pontos estão dispersos aleatoriamente em torno da linha horizontal em y=0. Isso nos sugere que as suposições de linearidade e homocedasticidade são razoavelmente satisfeitas.
+
+#2)Gráfico Q-Q:A maioria dos pontos se alinha bem com a linha diagonal.Notamos  um leve desvio nas caudas, o que é comum em amostras pequenas,mas no geral,a suposição de normalidade dos erros parece ser atendida.
+
+#3)Escala-Localização: Usamos esse gráfico para  também avaliar a homocedasticidade. A linha vermelha não é perfeitamente horizontal, indicando que a variância pode aumentar ligeiramente com os valores preditos, mas não há um padrão muito forte de heterocedasticidade.
+
+#4)Resíduos x Alavancagem: Esse gráfico nos ajuda a identificar pontos influentes.Observamos alguns pontos que se destacam mas eles não aparentam estar  exercendo uma influência tão acentuada para invalidar nosso  modelo.
+
+#Conclusão: O modelo ajustado parece satisfazer adequadamente as suposições da regressão linear simples.
+```
+
+**b)** Quais as limitações do modelo de regressão linear simples? O modelo pareceu limitado para esse conjunto de dados?
+
+```{r echo=TRUE, results='hold'}
+# Limitações que um modelo de regressão linear pode apresentar são:
+
+#1)Relações Lineares: O modelo só consegue capturar relações lineares entre as variáveis.Se a relação verdadeira apresentar curvas, o modelo linear será inadequado.
+
+#2)Sensibilidade a Outliers:Os outiliers podem influenciar desproporcionalmente a estimativa dos coeficientes,distorcendo a reta de regressão.
+
+#3)Multi causalidade: O modelo simples não considera outras variáveis explicativas que possam influenciar a variável resposta. A variação em y pode ser resultado de múltiplos fatores, não apenas de um único X.
+
+#4)Outro fato a pontuar é que correlação não implica causalidade: mesmo que uma forte relação linear seja encontrada, não se pode concluir que x causa y, pois pode haver uma variável de confusão ou a relação pode ser meramente correlacional.
+ 
+#Para este conjunto de dados, o modelo não pareceu limitado.O gráfico de dispersão inicial (item 1c)e o alto coeficiente de determinação (R^2≈0.97, no item 4c) indicam que a relação entre o número de motoristas (Drivers) e o consumo de combustível (FuelC) é muito bem descrita por uma linha reta.
+```
+
+**c)** Descreva o que é sobreajuste (*overfitting*) e subajuste (*underfitting*). Como avaliar se ocorreu algum desses casos no modelo ajustado?
+
+```{r echo=TRUE, results='hold'}
+# 1)Subajuste (Underfitting):
+# Acontece quando um modelo é muito simples para capturar a estrutura subjacente dos dados.Ele não se ajusta bem nem aos dados de treinamento.Um sinal claro de subajuste é um desempenho ruim, como um R^2 muito baixo, indicando que o modelo não consegue explicar a variação nos dados.
+ 
+# 2)Sobreajuste (Overfitting):
+# Ocorre quando um modelo é excessivamente complexo e começa a "memorizar" os dados de treinamento, incluindo o ruído aleatório.Esse modelo terá um desempenho excelente nos dados de treinamento, mas falhará para generalizar  novos dados, apresentando um desempenho muito pior neles.
+
+# Avaliação no modelo Ajustado:
+# A maneira padrão de avaliar overfitting e underfitting é dividir os dados em um conjunto de treinamento e um conjunto de teste. O modelo é ajustado nos dados de treinamento e logo em seguida  avaliado nos dados de teste.Então ,se o modelo tiver um desempenho ruim em ambos (exemplo: um R^2 baixo em treino e teste), ele está sofrendo de subajuste.Agora, se o modelo tiver um desempenho excelente no treino (exemplo: R^2 alto),porém  ruim no teste (ex: R^2 bem menor), ele está sofrendo de sobreajuste.
+
+# No nosso caso, não fizemos essa divisão. No entanto, podemos inferir que não há subajuste já que o nosso  R^2 de aproximadamente 97% é muito alto, indicando que o modelo captura a variabilidade dos dados com maestria. Aqui o sobreajuste é improvável, visto que  O modelo de regressão linear simples, com apenas um preditor, é um dos modelos mais simples que existem. É muito difícil para um modelo tão simples sobreajustar os dados. O overfitting é uma preocupação maior em modelos mais complexos.
+
+# Portanto, podemos concluir com segurança que o modelo ajustado não sofre de subajuste nem de sobreajust, ele parece ser mais um modelo adequado e bem generalizável para a relação entre Drivers e FuelC.
+```
